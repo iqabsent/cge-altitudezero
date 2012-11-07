@@ -3,15 +3,21 @@
 #define FREEGLUT_STATIC
 #include "include/GL/glut.h"
 
+#include "include/AL/al.h"
+#include "include/AL/alc.h"
+
 // just use andy thomason's vector and matrix classes
 // think they need math
 #include <stdio.h>
 #include <math.h>
 #include <assert.h>
-#include "include/file_manager.h"
-#include "include/texture_manager.h"
+
 #include "include/vector.h"
 #include "include/matrix.h"
+
+#include "include/file_manager.h"
+#include "include/texture_manager.h"
+#include "include/sound_manager.h"
 
 // my shader program class
 // .program returns a compiled & linked shader program
@@ -53,11 +59,18 @@ void updateView()
 }
 
 void simulate() {
+
+//move this elsewhere..
+char name[2];
+name[0] = 1 + '0';
+name[1] = 0;
+
   float speed = 10.0f / 30;
   if (keys['f']) modelToWorld.translate(0.5f,0.0f,0.0f);
   if (keys['s']) modelToWorld.translate(-0.5f,0.0f,0.0f);
   if (keys['d']) modelToWorld.translate(0.0f,-0.5f,0.0f);
   if (keys['e']) modelToWorld.translate(0.0f,0.5f,0.0f);
+  if (keys['c']) sound_manager::play(vec4(0, 0, 0, 0), name);
 }
 
 void set_key(int key, int value) {
@@ -116,6 +129,8 @@ void main(int argc, char** argv) {
   glutInitWindowSize(viewport_width_, viewport_height_);
   glutCreateWindow("AltitudeZero - Scroller game..");
   glewInit();
+
+  sound_manager::add_buffers("assets/labels.txt", "assets/poing.wav");
 
   texture_ = texture_manager::new_texture("assets/textures.tga", 0, 128, 128, 128);
 

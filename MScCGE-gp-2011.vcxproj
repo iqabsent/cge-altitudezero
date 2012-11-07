@@ -79,10 +79,14 @@
   <ItemGroup>
     <Library Include="lib\freeglut_static.lib" />
     <Library Include="lib\glew32s.lib" />
+    <Library Include="lib\OpenAL32.lib" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="include\file_manager.h" />
     <ClInclude Include="include\matrix.h" />
     <ClInclude Include="include\shader.h" />
+    <ClInclude Include="include\sound_manager.h" />
+    <ClInclude Include="include\texture_manager.h" />
     <ClInclude Include="include\vector.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

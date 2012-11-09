@@ -1,35 +1,13 @@
-class ShaderProg {
+class Renderer {
   
   GLuint program_;
-  GLuint modelToProjection_index;
-  GLuint diffuse_color_index;
-  GLuint light_direction_index;
   GLuint textureIndex_;
+  GLuint modelToProjection_index;
 
 public:
-  ShaderProg() {}
+  Renderer() {}
 
   void init() {
-
-  /*
-    char * vertex_shader_code =
-      "varying vec4 color_;"
-      "attribute vec4 pos;"
-      "attribute vec3 normal;"
-      "uniform vec4 diffuse_color;"
-      "uniform vec3 light_direction;"
-      "uniform mat4 modelToProjection;"
-      ""
-      "void main() {"
-      "  float light_factor = dot(light_direction, normal);"
-      "  color_ = max(light_factor, 0.2) * diffuse_color;"
-      "  gl_Position = modelToProjection * pos;"
-      "}";
-
-    char * fragment_shader_code =
-      "varying vec4 color_;"
-      "void main() {gl_FragColor = color_;}";
-    */
 
     char * vertex_shader_code =
       "varying vec2 uv_;"
@@ -58,23 +36,6 @@ public:
 
     modelToProjection_index = glGetUniformLocation(program_, "modelToProjection");
     textureIndex_ = glGetUniformLocation(program_, "texture");
-    diffuse_color_index = glGetUniformLocation(program_, "diffuse_color");
-    light_direction_index = glGetUniformLocation(program_, "light_direction");
-  }
-
-  void setSomeStuff(const vec4 &diffuse_color, const vec4 &light_direction) {
-    
-    glUseProgram(program_);
-
-    glUniform4fv(diffuse_color_index, 1, diffuse_color.get());
-    glUniform3fv(light_direction_index, 1, light_direction.get());
-  }
-
-  void setMatrixStuff(const mat4 &modelToProjection) {
-    
-    glUseProgram(program_);
-    
-    glUniformMatrix4fv(modelToProjection_index, 1, GL_FALSE, modelToProjection.get());
   }
 
   GLuint makeShader (int type, char * code) {
@@ -87,8 +48,6 @@ public:
     puts(buf);
 
     modelToProjection_index = glGetUniformLocation(program_, "modelToProjection");
-    diffuse_color_index = glGetUniformLocation(program_, "diffuse_color");
-    light_direction_index = glGetUniformLocation(program_, "light_direction");
 
     return shader;
   }
@@ -97,8 +56,14 @@ public:
     return program_;
   }
 
-  void render() {
+  void preRender() {
+    glClearColor(0, 0, 0, 1);
+    glClear (GL_COLOR_BUFFER_BIT);
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
     glUseProgram(program_);
+
     glUniform1i(textureIndex_, 0);
   }
 

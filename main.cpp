@@ -23,7 +23,7 @@ struct RenderData {
   GLuint vertex_count;
   GLuint texture;
   mat4 model_to_world;
-  float * vertices; //didn't have []
+  float * vertices;
 };
 
 // my shader program class
@@ -31,60 +31,32 @@ struct RenderData {
 #include "include/shader.h"
 #include "include/gameobj.h"
 
-ShaderProg shaderProg;
-GLuint program;
-GLuint texture_;
+Renderer renderer;
 
-GLuint texture2;
+GLuint fighter_texture;
+GLuint bullet_texture;
 
-mat4 modelToProjection_;
-mat4 cameraToWorld;
-mat4 modelToWorld;
-const int viewport_width_ = 800, viewport_height_ = 600;
+const int viewport_width_ = 800, viewport_height_ = 800;
 char keys[256];
 
 GameObj bullet;
-
-void build_camera_matrix()
-{
-  // this matrix can be used to move objects around in the scene
-  modelToWorld.loadIdentity();
-
-  // this is the transform from the camera to the world
-  cameraToWorld.loadIdentity();
-  cameraToWorld.translate(0, 0, 10);
-}
-
-void updateView()
-{
-  // flip it around to transform from world to camera
-  mat4 worldToCamera;
-  cameraToWorld.invertQuick(worldToCamera);
-
-  // build a projections matrix to add perspective
-  mat4 cameraToProjection;
-  cameraToProjection.loadIdentity();
-  float n = 0.1f, f = 200;
-  cameraToProjection.frustum(-n, n, -n, n, n, f);
-
-  // model -> world -> camera -> projection
-  modelToProjection_ = modelToWorld * worldToCamera * cameraToProjection;
-}
+GameObj fighter;
 
 void simulate() {
 
-//move this elsewhere..
-char name[2];
-name[0] = 1 + '0';
-name[1] = 0;
+  //move this elsewhere..
+  char name[2];
+  name[0] = 1 + '0';
+  name[1] = 0;
 
   float speed = 10.0f / 30;
-  if (keys['f']) modelToWorld.translate(0.5f,0.0f,0.0f);
-  if (keys['s']) modelToWorld.translate(-0.5f,0.0f,0.0f);
-  if (keys['d']) modelToWorld.translate(0.0f,-0.5f,0.0f);
-  if (keys['e']) modelToWorld.translate(0.0f,0.5f,0.0f);
+  if (keys['f']) fighter.setThrust(0.06f,0.0f);
+  if (keys['s']) fighter.setThrust(-0.06f,0.0f);
+  if (keys['d']) fighter.setThrust(0.0f,-0.06f);
+  if (keys['e']) fighter.setThrust(0.0f,0.06f);
   if (keys['c']) sound_manager::play(vec4(0, 0, 0, 0), name);
 
+  fighter.simulate();
   bullet.simulate();
 }
 
@@ -94,34 +66,18 @@ void set_key(int key, int value) {
 
 void render()
 {
-  glClearColor(0, 0, 0, 1);
-  glClear (GL_COLOR_BUFFER_BIT);
-  glEnable(GL_BLEND);
-  glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+  renderer.preRender();
 
-  glUseProgram(program);
-
-  float vertices[3*3] = {
-    -1, -1, 0,
-    1, -1, 0,
-    0,  1, 0
-  };
-
-  mat4 modelToWorld2;
-  modelToWorld2.loadIdentity();
-
-  shaderProg.renderObject(texture_, vertices, 3, modelToWorld);
-  shaderProg.renderObject(bullet.renderData());
+  renderer.renderObject(fighter.renderData());
+  renderer.renderObject(bullet.renderData());
 }
 
 static void display() { simulate(); render(); }
 static void key_down( unsigned char key, int x, int y) { set_key(key, 1); }
 static void key_up( unsigned char key, int x, int y) { set_key(key, 0); }
-static void timer(int value) { glutTimerFunc(30, timer, 1); glutPostRedisplay(); }
+static void timer(int value) { glutTimerFunc(10, timer, 1); glutPostRedisplay(); }
 
 void main(int argc, char** argv) {
-
-//these should be set / overiden by args
 
   glutInit(&argc, argv);
   glutInitWindowSize(viewport_width_, viewport_height_);
@@ -130,13 +86,10 @@ void main(int argc, char** argv) {
 
   sound_manager::add_buffers("assets/labels.txt", "assets/poing.wav");
 
-  texture_ = texture_manager::new_texture("assets/texture.tga", 0, 1, 256, 180);
-  texture2 = texture_manager::new_texture("assets/texture.tga", 2, 0, 1, 1);
+  fighter_texture = texture_manager::new_texture("assets/texture.tga", 0, 1, 256, 180);
+  bullet_texture = texture_manager::new_texture("assets/texture.tga", 2, 0, 1, 1);
 
-  shaderProg.init();
-  program = shaderProg.program();
-
-  build_camera_matrix();
+  renderer.init();
 
   float bullet_vertices[3*6] = {
     -0.1f, 0.1f, 0,
@@ -148,17 +101,25 @@ void main(int argc, char** argv) {
   };
 
   bullet.init(1,1,bullet_vertices,6);
-  bullet.setTexture(texture2);
-  bullet.setThrust(0.0f, 0.1f);
+  bullet.setTexture(bullet_texture);
+  bullet.setThrust(0.0f, 0.2f);
 
-  //function for rendering
+  float fighter_vertices[3*3] = {
+    -1, -1, 0,
+    1, -1, 0,
+    0,  1, 0
+  };
+
+  fighter.init(0,0,fighter_vertices,3);
+  fighter.setTexture(fighter_texture);
+  fighter.setFriction(0.03f);
+  fighter.setMax(0.24f);
+
   glutDisplayFunc(display);
   glutKeyboardFunc(key_down);
   glutKeyboardUpFunc(key_up);
-  glutTimerFunc(30, timer, 1);
+  glutTimerFunc(10, timer, 1);
 
   //call main loop
   glutMainLoop(); //Start the main loop
-  //display();
-
 }

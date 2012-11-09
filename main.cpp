@@ -39,8 +39,8 @@ GLuint bullet_texture;
 const int viewport_width_ = 800, viewport_height_ = 800;
 char keys[256];
 
-GameObj bullet;
-GameObj fighter;
+Projectile bullet;
+Fighter fighter;
 
 void simulate() {
 
@@ -69,7 +69,7 @@ void render()
   renderer.preRender();
 
   renderer.renderObject(fighter.renderData());
-  renderer.renderObject(bullet.renderData());
+  if(bullet.active()) renderer.renderObject(bullet.renderData());
 }
 
 static void display() { simulate(); render(); }

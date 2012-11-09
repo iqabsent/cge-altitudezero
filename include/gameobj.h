@@ -1,6 +1,6 @@
 class GameObj {
   bool active_;
-  vec4 pos_;
+
   vec4 speed_;
   vec4 thrust_;
   vec4 max_;
@@ -15,6 +15,9 @@ class GameObj {
   //  float * vertices; //didn't have []
   //};
 
+protected:
+  vec4 pos_;
+
 public:
   GameObj(){};
 
@@ -28,6 +31,15 @@ public:
     render_data_.vertices = vertices;
     render_data_.vertex_count = vertex_count;
     render_data_.model_to_world.loadIdentity();
+  }
+
+  void activate(float x, float y) {
+    pos_ = vec4(x,y,0,0);
+    active_ = true;
+  }
+
+  void deactivate() {
+    active_ = false;
   }
 
   void setTexture(GLuint texture) {
@@ -45,6 +57,8 @@ public:
   void setMax(float max) {
     max_ = vec4(max, max, 0, 0);
   }
+
+  virtual void boundaryChecks() {};
 
   void simulate() {
     // position
@@ -67,11 +81,44 @@ public:
     // translation vector .. kinda
     pos_ = pos_ + speed_;
 
+    // boundary checks
+    boundaryChecks();
+
     // matrix
     float * pos = pos_.get();
     render_data_.model_to_world.loadIdentity();
     render_data_.model_to_world.translate(pos[0], pos[1], 0);
   }
 
+  bool active() { return active_; }
   RenderData renderData() { return render_data_; }
+  vec4 pos() {return pos_; }
+  
+};
+
+
+// derived GameObj used for player fighet craft
+class Fighter : public GameObj {
+
+public:
+  void boundaryChecks() {
+    float * pos = pos_.get();
+    if(pos[0] > 10) pos[0] = 10;
+    if(pos[0] < -10) pos[0] = -10;
+    if(pos[1] > 10) pos[1] = 10;
+    if(pos[1] < -10) pos[1] = -10;
+    pos_ = vec4(pos[0], pos[1], 0, 0);
+  }
+
+};
+
+// derived GameObj used for bullets
+class Projectile : public GameObj {
+
+public:
+  void boundaryChecks() {
+    float * pos = pos_.get();
+    if(abs(pos[0]) > 10 || abs(pos[1]) > 10) deactivate();
+  }
+
 };

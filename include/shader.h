@@ -102,4 +102,45 @@ public:
     glUniform1i(textureIndex_, 0);
   }
 
+  mat4 setProjection(mat4 modelToWorld)
+  {
+    mat4 cameraToWorld;
+    cameraToWorld.loadIdentity();
+    cameraToWorld.translate(0, 0, 10);
+
+    // flip it around to transform from world to camera
+    mat4 worldToCamera;
+    cameraToWorld.invertQuick(worldToCamera);
+
+    // build a projections matrix to add perspective
+    mat4 cameraToProjection;
+    cameraToProjection.loadIdentity();
+    float n = 0.1f, f = 200;
+    cameraToProjection.frustum(-n, n, -n, n, n, f);
+
+    // model -> world -> camera -> projection
+    return modelToWorld * worldToCamera * cameraToProjection;
+  }
+
+  void renderObject(GLuint texture, float vertices[], int vertex_count, mat4 modelToWorld) {
+
+    mat4 modelToProjection = setProjection(modelToWorld);
+
+    glUniform1i(textureIndex_, 0);
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, texture);
+    glUniformMatrix4fv(modelToProjection_index, 1, GL_FALSE, modelToProjection.get());
+  
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3*sizeof(float), (void*)vertices );
+    glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 3*sizeof(float), (void*)vertices );
+    glEnableVertexAttribArray(0);
+    glEnableVertexAttribArray(2); 
+
+    glDrawArrays(GL_TRIANGLES, 0, vertex_count);
+  }
+
+  void renderObject(RenderData render_data) {
+    renderObject(render_data.texture, render_data.vertices, render_data.vertex_count, render_data.model_to_world);
+  }
+
 };

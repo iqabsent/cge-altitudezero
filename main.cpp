@@ -19,18 +19,31 @@
 #include "include/texture_manager.h"
 #include "include/sound_manager.h"
 
+struct RenderData {
+  GLuint vertex_count;
+  GLuint texture;
+  mat4 model_to_world;
+  float * vertices; //didn't have []
+};
+
 // my shader program class
 // .program returns a compiled & linked shader program
 #include "include/shader.h"
+#include "include/gameobj.h"
 
 ShaderProg shaderProg;
 GLuint program;
 GLuint texture_;
+
+GLuint texture2;
+
 mat4 modelToProjection_;
 mat4 cameraToWorld;
 mat4 modelToWorld;
-const int viewport_width_ = 640, viewport_height_ = 640;
+const int viewport_width_ = 800, viewport_height_ = 600;
 char keys[256];
+
+GameObj bullet;
 
 void build_camera_matrix()
 {
@@ -71,6 +84,8 @@ name[1] = 0;
   if (keys['d']) modelToWorld.translate(0.0f,-0.5f,0.0f);
   if (keys['e']) modelToWorld.translate(0.0f,0.5f,0.0f);
   if (keys['c']) sound_manager::play(vec4(0, 0, 0, 0), name);
+
+  bullet.simulate();
 }
 
 void set_key(int key, int value) {
@@ -79,41 +94,24 @@ void set_key(int key, int value) {
 
 void render()
 {
-
-  glActiveTexture(GL_TEXTURE0);
-  glBindTexture(GL_TEXTURE_2D, texture_);
+  glClearColor(0, 0, 0, 1);
+  glClear (GL_COLOR_BUFFER_BIT);
   glEnable(GL_BLEND);
   glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-  shaderProg.render();
-
-  //glUseProgram(program);
-
-  //vec4 color(1, 1, 0, 1);
-  //vec4 light_direction(-1, 1, 1, 1);
-  //shaderProg.setSomeStuff(color, light_direction);
-  shaderProg.setMatrixStuff(modelToProjection_);
-  
-  glClearColor(0, 0, 0, 1);
-  glViewport(0, 0, viewport_width_, viewport_height_);
-  glClear (GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-  glEnable(GL_DEPTH_TEST);
+  glUseProgram(program);
 
   float vertices[3*3] = {
     -1, -1, 0,
     1, -1, 0,
-    0,  1, 0,
+    0,  1, 0
   };
 
-  glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3*sizeof(float), (void*)vertices );
-  glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 3*sizeof(float), (void*)vertices );
-  glEnableVertexAttribArray(0);
-  glEnableVertexAttribArray(2);
+  mat4 modelToWorld2;
+  modelToWorld2.loadIdentity();
 
-  updateView();
-
-  glDrawArrays(GL_TRIANGLES, 0, 3);
+  shaderProg.renderObject(texture_, vertices, 3, modelToWorld);
+  shaderProg.renderObject(bullet.renderData());
 }
 
 static void display() { simulate(); render(); }
@@ -132,13 +130,26 @@ void main(int argc, char** argv) {
 
   sound_manager::add_buffers("assets/labels.txt", "assets/poing.wav");
 
-  texture_ = texture_manager::new_texture("assets/textures.tga", 0, 128, 128, 128);
+  texture_ = texture_manager::new_texture("assets/texture.tga", 0, 1, 256, 180);
+  texture2 = texture_manager::new_texture("assets/texture.tga", 2, 0, 1, 1);
 
   shaderProg.init();
-
   program = shaderProg.program();
 
   build_camera_matrix();
+
+  float bullet_vertices[3*6] = {
+    -0.1f, 0.1f, 0,
+    -0.1f, -0.1f, 0,
+    0.1f, -0.1f, 0,
+    0.1f, 0.1f, 0,
+    0.1f, -0.1f, 0,
+    -0.1f, 0.1f, 0
+  };
+
+  bullet.init(1,1,bullet_vertices,6);
+  bullet.setTexture(texture2);
+  bullet.setThrust(0.0f, 0.1f);
 
   //function for rendering
   glutDisplayFunc(display);
@@ -149,11 +160,5 @@ void main(int argc, char** argv) {
   //call main loop
   glutMainLoop(); //Start the main loop
   //display();
- 
-  /*/ Add or remove * between preceding // to toggle this block
-  GLfloat color[] = {1, 1, 0, 1};
-  GLuint colorIndex = glGetUniformLocation(program, "color");
-  glUniform4fv(colorIndex, 1, color);
-  //*/
 
 }

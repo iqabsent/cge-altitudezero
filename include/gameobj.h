@@ -97,8 +97,31 @@ public:
 };
 
 
-// derived GameObj used for player fighet craft
-class Fighter : public GameObj {
+// derived from GameObj, used for bullets
+class Projectile : public GameObj {
+
+public:
+  void boundaryChecks() {
+    float * pos = pos_.get();
+    if(abs(pos[0]) > 10 || abs(pos[1]) > 10) deactivate();
+  }
+};
+
+// derived from GameObj used, for player fighter and enemy craft
+class Craft : public GameObj {
+
+protected:
+  float health_;
+  Craft() {}; // don't want anyone to instantiate one of these; not sure if that will work..
+
+public:
+  void damage(float points) { health_ = health_ - points; if(health_ <= 0) deactivate(); }
+  void heal(float points) { health_ = health_ + points; }
+
+};
+
+// derived from Craft, used for player fighter craft
+class Fighter : public Craft {
 
 public:
   void boundaryChecks() {
@@ -109,16 +132,20 @@ public:
     if(pos[1] < -10) pos[1] = -10;
     pos_ = vec4(pos[0], pos[1], 0, 0);
   }
-
 };
 
-// derived GameObj used for bullets
-class Projectile : public GameObj {
+// derived from Craft, used for enemy fighter craft
+class Enemy : public Craft {
 
 public:
+
+  void init(float x, float y, float vertices[], int vertex_count) {
+    Craft::init(x, y, vertices, vertex_count);
+    health_ = 100;
+  }
+
   void boundaryChecks() {
     float * pos = pos_.get();
     if(abs(pos[0]) > 10 || abs(pos[1]) > 10) deactivate();
   }
-
 };

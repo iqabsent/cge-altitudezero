@@ -34,6 +34,7 @@ struct RenderData {
 Renderer renderer;
 
 GLuint fighter_texture;
+GLuint enemy_texture;
 GLuint bullet_texture;
 
 const int viewport_width_ = 800, viewport_height_ = 800;
@@ -41,6 +42,7 @@ char keys[256];
 
 Projectile bullet;
 Fighter fighter;
+Enemy enemy;
 
 void simulate() {
 
@@ -57,6 +59,7 @@ void simulate() {
   if (keys['c']) sound_manager::play(vec4(0, 0, 0, 0), name);
 
   fighter.simulate();
+  enemy.simulate();
   bullet.simulate();
 }
 
@@ -69,6 +72,7 @@ void render()
   renderer.preRender();
 
   renderer.renderObject(fighter.renderData());
+  if(enemy.active()) renderer.renderObject(enemy.renderData());
   if(bullet.active()) renderer.renderObject(bullet.renderData());
 }
 
@@ -84,36 +88,41 @@ void main(int argc, char** argv) {
   glutCreateWindow("AltitudeZero - Scroller game..");
   glewInit();
 
-  sound_manager::add_buffers("assets/labels.txt", "assets/poing.wav");
+  sound_manager::add_buffers("assets/q3machg.txt", "assets/q3machg.wav");
 
   fighter_texture = texture_manager::new_texture("assets/texture.tga", 0, 1, 256, 180);
+  enemy_texture = texture_manager::new_texture("assets/texture.tga", 100, 100, 56, 80);
   bullet_texture = texture_manager::new_texture("assets/texture.tga", 2, 0, 1, 1);
 
   renderer.init();
 
   float bullet_vertices[3*6] = {
-    -0.1f, 0.1f, 0,
-    -0.1f, -0.1f, 0,
-    0.1f, -0.1f, 0,
-    0.1f, 0.1f, 0,
-    0.1f, -0.1f, 0,
-    -0.1f, 0.1f, 0
+    -0.05f, 0.05f, 0,
+    -0.05f, -0.05f, 0,
+    0.05f, -0.05f, 0,
+    0.05f, 0.05f, 0,
+    0.05f, -0.05f, 0,
+    -0.05f, 0.05f, 0
   };
 
   bullet.init(1,1,bullet_vertices,6);
   bullet.setTexture(bullet_texture);
   bullet.setThrust(0.0f, 0.2f);
 
-  float fighter_vertices[3*3] = {
-    -1, -1, 0,
-    1, -1, 0,
-    0,  1, 0
+  float craft_vertices[3*3] = {
+    -0.3f, -0.3f, 0,
+    0.3f, -0.3f, 0,
+    0,  0.3f, 0
   };
 
-  fighter.init(0,0,fighter_vertices,3);
+  fighter.init(0,0,craft_vertices,3);
   fighter.setTexture(fighter_texture);
   fighter.setFriction(0.03f);
   fighter.setMax(0.24f);
+
+  enemy.init(0,10,craft_vertices,3);
+  enemy.setTexture(enemy_texture);
+  enemy.setThrust(0, -0.05f);
 
   glutDisplayFunc(display);
   glutKeyboardFunc(key_down);

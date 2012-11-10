@@ -85,7 +85,7 @@
     <ClInclude Include="include\file_manager.h" />
     <ClInclude Include="include\gameobj.h" />
     <ClInclude Include="include\matrix.h" />
-    <ClInclude Include="include\shader.h" />
+    <ClInclude Include="include\render.h" />
     <ClInclude Include="include\sound_manager.h" />
     <ClInclude Include="include\texture_manager.h" />
     <ClInclude Include="include\vector.h" />

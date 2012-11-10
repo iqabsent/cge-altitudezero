@@ -15,6 +15,14 @@ class GameObj {
   //  float * vertices; //didn't have []
   //};
 
+  CollisionData collision_data_;
+  // FOR REFERENCE
+  //struct CollisionData {
+  //  float width;
+  //  float height;
+  //  float radius;
+  //};
+
 protected:
   vec4 pos_;
 
@@ -31,6 +39,26 @@ public:
     render_data_.vertices = vertices;
     render_data_.vertex_count = vertex_count;
     render_data_.model_to_world.loadIdentity();
+
+    // check bounding box dimensions
+    float vertex_x = vertices[0];
+    float vertex_y = vertices[1];
+    float bounds[4] = {vertex_x, vertex_y, vertex_x, vertex_y}; //{min_x, min_y, max_x, max_y}
+    for (int i = 1; i < vertex_count; i++) {
+      vertex_x = vertices[i*3];
+      vertex_y = vertices[i*3 + 1];
+      if(vertex_x < bounds[0]) bounds[0] = vertex_x;
+      if(vertex_x > bounds[2]) bounds[2] = vertex_x;
+      if(vertex_y < bounds[1]) bounds[1] = vertex_y;
+      if(vertex_y > bounds[3]) bounds[3] = vertex_y;
+    }
+
+    float width = bounds[2] - bounds[0];
+    float height = bounds[3] - bounds[1];
+
+    collision_data_.width = width;
+    collision_data_.height = height; 
+    collision_data_.radius = sqrt(width*width + height*height);
   }
 
   void activate(float x, float y) {
@@ -54,7 +82,7 @@ public:
     friction_ = friction;
   }
 
-  void setMax(float max) {
+  void setMaxSpeed(float max) {
     max_ = vec4(max, max, 0, 0);
   }
 
@@ -78,7 +106,7 @@ public:
     }
     speed_ = vec4(speed[0], speed[1], 0, 0);
 
-    // translation vector .. kinda
+    // update translation vector .. kinda
     pos_ = pos_ + speed_;
 
     // boundary checks
@@ -90,21 +118,37 @@ public:
     render_data_.model_to_world.translate(pos[0], pos[1], 0);
   }
 
-  bool active() { return active_; }
-  RenderData renderData() { return render_data_; }
+  bool isActive() { return active_; }
+  RenderData getRenderData() { return render_data_; }
+  CollisionData getCollisionData() { return collision_data_; }
   vec4 pos() {return pos_; }
+
+  void xy(float * xy) {
+    float * pos = pos_.get();
+    xy[0] = pos[0];
+    xy[1] = pos[1];
+  }
   
 };
-
 
 // derived from GameObj, used for bullets
 class Projectile : public GameObj {
 
+  float damage_;
+
 public:
+  void init(float x, float y, float vertices[], int vertex_count, float damage) {
+    GameObj::init(x, y, vertices, vertex_count);
+    damage_ = damage;
+  }
+
   void boundaryChecks() {
     float * pos = pos_.get();
     if(abs(pos[0]) > 10 || abs(pos[1]) > 10) deactivate();
   }
+
+  void setDamage(float damage){ damage_ = damage; }
+  float getDamage(){ return damage_; }
 };
 
 // derived from GameObj used, for player fighter and enemy craft

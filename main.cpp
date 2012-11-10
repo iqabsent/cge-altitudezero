@@ -26,9 +26,16 @@ struct RenderData {
   float * vertices;
 };
 
+struct CollisionData {
+  //GLuint texture; // for more precise collision detection .. much later .. maybe
+  float width;
+  float height;
+  float radius;
+};
+
 // my shader program class
-// .program returns a compiled & linked shader program
-#include "include/shader.h"
+// compiles and links a standard shader for use in rendering RenderData
+#include "include/render.h"
 #include "include/gameobj.h"
 
 Renderer renderer;
@@ -43,6 +50,37 @@ char keys[256];
 Projectile bullet;
 Fighter fighter;
 Enemy enemy;
+
+void collision_detection() {
+  // very basic
+  // - only works on geometry centered on x=0, y=0 in its own model space
+  // - only works in 2D
+  // - only to radius precision
+  // .. can be improved to bounding-box precision
+  // .. can be improved to check texture at picked point for pixel colour
+  // * but that would be silly, just use bullet instead 0_0
+
+  CollisionData enemy_collision_data = enemy.getCollisionData();
+  float enemy_xy[2] = {0,0};
+  float bullet_xy[2] = {0,0};
+  float distance = 0;
+  float delta_x = 0;
+  float delta_y = 0;
+
+  enemy.xy((float *)&enemy_xy);
+  bullet.xy((float *)&bullet_xy);
+
+  delta_x = enemy_xy[0] - bullet_xy[0];
+  delta_y = enemy_xy[1] - bullet_xy[1];
+
+  distance = sqrt(delta_x*delta_x + delta_y*delta_y);
+
+  if (distance < enemy_collision_data.radius) {
+    // hit possible, check bounding box
+    // for now assume hit .. no time :/
+    enemy.damage(bullet.getDamage());
+  }
+}
 
 void simulate() {
 
@@ -61,6 +99,8 @@ void simulate() {
   fighter.simulate();
   enemy.simulate();
   bullet.simulate();
+
+  collision_detection();
 }
 
 void set_key(int key, int value) {
@@ -71,9 +111,9 @@ void render()
 {
   renderer.preRender();
 
-  renderer.renderObject(fighter.renderData());
-  if(enemy.active()) renderer.renderObject(enemy.renderData());
-  if(bullet.active()) renderer.renderObject(bullet.renderData());
+  renderer.renderObject(fighter.getRenderData());
+  if(enemy.isActive()) renderer.renderObject(enemy.getRenderData());
+  if(bullet.isActive()) renderer.renderObject(bullet.getRenderData());
 }
 
 static void display() { simulate(); render(); }
@@ -105,7 +145,7 @@ void main(int argc, char** argv) {
     -0.05f, 0.05f, 0
   };
 
-  bullet.init(1,1,bullet_vertices,6);
+  bullet.init(0, 1, bullet_vertices, 6, 100);
   bullet.setTexture(bullet_texture);
   bullet.setThrust(0.0f, 0.2f);
 
@@ -118,7 +158,7 @@ void main(int argc, char** argv) {
   fighter.init(0,0,craft_vertices,3);
   fighter.setTexture(fighter_texture);
   fighter.setFriction(0.03f);
-  fighter.setMax(0.24f);
+  fighter.setMaxSpeed(0.24f);
 
   enemy.init(0,10,craft_vertices,3);
   enemy.setTexture(enemy_texture);

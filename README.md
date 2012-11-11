@@ -14,8 +14,11 @@ By: Willem B. van der Merwe
 # Code layout: #
 
 ## assets.h ##
+Holds enums for texture and sound assets
+Sets up and contains textures
 
 ## collision.h ##
+Does collision checks between two CollisionData items .. badly
 
 ## gameobj.h ##
 Happy with this.. or where this is going

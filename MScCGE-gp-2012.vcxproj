@@ -11,9 +11,9 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{558168E4-6688-41A4-B642-F3579E03CE86}</ProjectGuid>
+    <ProjectGuid>{FA270B72-5D94-4DBD-90F3-026DC2B004A0}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
-    <RootNamespace>MScCGEgp2011</RootNamespace>
+    <RootNamespace>MScCGEgp2012</RootNamespace>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
@@ -84,15 +84,10 @@
   <ItemGroup>
     <ClInclude Include="include\assets.h" />
     <ClInclude Include="include\collision.h" />
-    <ClInclude Include="include\file_manager.h" />
     <ClInclude Include="include\gameobj.h" />
-    <ClInclude Include="include\matrix.h" />
     <ClInclude Include="include\render.h" />
-    <ClInclude Include="include\sound_manager.h" />
     <ClInclude Include="include\spawner.h" />
     <ClInclude Include="include\structs.h" />
-    <ClInclude Include="include\texture_manager.h" />
-    <ClInclude Include="include\vector.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

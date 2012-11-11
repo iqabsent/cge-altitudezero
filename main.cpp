@@ -27,16 +27,13 @@ struct RenderData {
 };
 
 struct CollisionData {
-  //GLuint texture; // for more precise collision detection .. much later .. maybe
-  float width;
-  float height;
-  float radius;
+  float center_offset_x, center_offset_y, center_x, center_y, width, height, radius;
 };
 
-// my shader program class
-// compiles and links a standard shader for use in rendering RenderData
 #include "include/render.h"
 #include "include/gameobj.h"
+#include "include/collision.h"
+#include "include/spawner.h"
 
 Renderer renderer;
 
@@ -48,57 +45,59 @@ const int viewport_width_ = 800, viewport_height_ = 800;
 char keys[256];
 
 Projectile bullet;
-Fighter fighter;
+Fighter player1;
 Enemy enemy;
 
 void collision_detection() {
-  // very basic
-  // - only works on geometry centered on x=0, y=0 in its own model space
-  // - only works in 2D
-  // - only to radius precision
-  // .. can be improved to bounding-box precision
-  // .. can be improved to check texture at picked point for pixel colour
-  // * but that would be silly, just use bullet instead 0_0
-
-  CollisionData enemy_collision_data = enemy.getCollisionData();
-  float enemy_xy[2] = {0,0};
-  float bullet_xy[2] = {0,0};
-  float distance = 0;
-  float delta_x = 0;
-  float delta_y = 0;
-
-  enemy.xy((float *)&enemy_xy);
-  bullet.xy((float *)&bullet_xy);
-
-  delta_x = enemy_xy[0] - bullet_xy[0];
-  delta_y = enemy_xy[1] - bullet_xy[1];
-
-  distance = sqrt(delta_x*delta_x + delta_y*delta_y);
-
-  if (distance < enemy_collision_data.radius) {
-    // hit possible, check bounding box
-    // for now assume hit .. no time :/
+  
+  // for each friendly bullet, check hit on each enemy
+  // for player fighter craft, check hit on each enemy and each enemy bullet
+  if(Collision::checkHit(bullet.getCollisionData(), enemy.getCollisionData())) {
     enemy.damage(bullet.getDamage());
+    Spawn::get().spawnSound(Spawn::sounds::SND_RICO);
+    if(!enemy.isActive()) {
+      // damage killed it
+      // spawn explosion effect!! .. in the near future :/
+      Spawn::get().spawnSound(Spawn::sounds::SND_EXPLODE);
+    }
   }
 }
 
 void simulate() {
 
-  //move this elsewhere..
-  char name[2];
-  name[0] = 1 + '0';
-  name[1] = 0;
+  Spawn::get().cooldown();
 
   float speed = 10.0f / 30;
-  if (keys['f']) fighter.setThrust(0.06f,0.0f);
-  if (keys['s']) fighter.setThrust(-0.06f,0.0f);
-  if (keys['d']) fighter.setThrust(0.0f,-0.06f);
-  if (keys['e']) fighter.setThrust(0.0f,0.06f);
-  if (keys['c']) sound_manager::play(vec4(0, 0, 0, 0), name);
+  if (keys['f']) player1.setThrust(0.06f,0.0f);
+  if (keys['s']) player1.setThrust(-0.06f,0.0f);
+  if (keys['d']) player1.setThrust(0.0f,-0.06f);
+  if (keys['e']) player1.setThrust(0.0f,0.06f);
+  if (keys['c']) {
+    Spawn::get().spawnFriendlyBullet(player1);
+  };
 
-  fighter.simulate();
-  enemy.simulate();
-  bullet.simulate();
+  player1.simulate();
+
+  // simulate all friendly bullets
+  Projectile * friendly_bullets = Spawn::get().getFriendlyBullets();
+  int friendly_bullets_max = Spawn::get().getFriendlyBulletMax();
+  for(int i = 0; i < friendly_bullets_max; i++) {
+    if(friendly_bullets[i].isActive()) friendly_bullets[i].simulate();
+  }
+
+  // simulate all enemy bullets
+  Projectile * enemy_bullets = Spawn::get().getEnemyBullets();
+  int enemy_bullets_max = Spawn::get().getEnemyBulletMax();
+  for(int i = 0; i < enemy_bullets_max; i++) {
+    if(enemy_bullets[i].isActive()) enemy_bullets[i].simulate();
+  }
+
+  // simulate all enemies
+  Enemy * enemies = Spawn::get().getEnemies();
+  int enemies_max = Spawn::get().getEnemyMax();
+  for(int i = 0; i < enemies_max; i++) {
+    if(enemies[i].isActive()) enemies[i].simulate();
+  }
 
   collision_detection();
 }
@@ -111,7 +110,30 @@ void render()
 {
   renderer.preRender();
 
-  renderer.renderObject(fighter.getRenderData());
+  // crappy implimentation .. to render all friendly bullets
+  Projectile * friendly_bullets = Spawn::get().getFriendlyBullets();
+  int friendly_bullets_max = Spawn::get().getFriendlyBulletMax();
+  for(int i = 0; i < friendly_bullets_max; i++) {
+    if(friendly_bullets[i].isActive()) renderer.renderObject(friendly_bullets[i].getRenderData());
+  }
+
+  // .. and render all enemy bullets
+  Projectile * enemy_bullets = Spawn::get().getEnemyBullets();
+  int enemy_bullets_max = Spawn::get().getEnemyBulletMax();
+  for(int i = 0; i < enemy_bullets_max; i++) {
+    if(enemy_bullets[i].isActive()) renderer.renderObject(enemy_bullets[i].getRenderData());
+  }
+
+  // .. and all enemies
+  Enemy * enemies = Spawn::get().getEnemies();
+  int enemy_max = Spawn::get().getEnemyMax();
+  for(int i = 0; i < enemy_max; i++) {
+    if(enemies[i].isActive()) renderer.renderObject(enemies[i].getRenderData());
+  }
+
+  //render player
+  renderer.renderObject(player1.getRenderData());
+
   if(enemy.isActive()) renderer.renderObject(enemy.getRenderData());
   if(bullet.isActive()) renderer.renderObject(bullet.getRenderData());
 }
@@ -128,42 +150,15 @@ void main(int argc, char** argv) {
   glutCreateWindow("AltitudeZero - Scroller game..");
   glewInit();
 
-  sound_manager::add_buffers("assets/q3machg.txt", "assets/q3machg.wav");
-
-  fighter_texture = texture_manager::new_texture("assets/texture.tga", 0, 1, 256, 180);
-  enemy_texture = texture_manager::new_texture("assets/texture.tga", 100, 100, 56, 80);
-  bullet_texture = texture_manager::new_texture("assets/texture.tga", 2, 0, 1, 1);
-
   renderer.init();
-
-  float bullet_vertices[3*6] = {
-    -0.05f, 0.05f, 0,
-    -0.05f, -0.05f, 0,
-    0.05f, -0.05f, 0,
-    0.05f, 0.05f, 0,
-    0.05f, -0.05f, 0,
-    -0.05f, 0.05f, 0
-  };
-
-  bullet.init(0, 1, bullet_vertices, 6, 100);
-  bullet.setTexture(bullet_texture);
-  bullet.setThrust(0.0f, 0.2f);
-
-  float craft_vertices[3*3] = {
-    -0.3f, -0.3f, 0,
-    0.3f, -0.3f, 0,
-    0,  0.3f, 0
-  };
-
-  fighter.init(0,0,craft_vertices,3);
-  fighter.setTexture(fighter_texture);
-  fighter.setFriction(0.03f);
-  fighter.setMaxSpeed(0.24f);
-
-  enemy.init(0,10,craft_vertices,3);
-  enemy.setTexture(enemy_texture);
-  enemy.setThrust(0, -0.05f);
-
+  Spawn::get().init();
+  
+  Spawn::get().spawnPlayer1();
+  player1 = Spawn::get().getPlayer1();
+  
+  Spawn::get().spawnEnemy(0,10);
+  Spawn::get().spawnEnemy(5,10);
+    
   glutDisplayFunc(display);
   glutKeyboardFunc(key_down);
   glutKeyboardUpFunc(key_up);

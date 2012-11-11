@@ -1,7 +1,6 @@
 class GameObj {
   bool active_;
 
-  vec4 speed_;
   vec4 thrust_;
   vec4 max_;
   float friction_;
@@ -12,22 +11,23 @@ class GameObj {
   //  GLuint vertex_count;
   //  GLuint texture;
   //  mat4 model_to_world;
-  //  float * vertices; //didn't have []
+  //  float * vertices;
   //};
 
   CollisionData collision_data_;
   // FOR REFERENCE
   //struct CollisionData {
-  //  float width;
-  //  float height;
-  //  float radius;
+  //  float center_offset_x, center_offset_y, center_x, center_y, width, height, radius;
   //};
 
 protected:
   vec4 pos_;
+  vec4 speed_;
 
 public:
-  GameObj(){};
+  GameObj(){
+    active_ = false;
+  };
 
   void init(float x, float y, float vertices[], int vertex_count) {
 
@@ -56,6 +56,10 @@ public:
     float width = bounds[2] - bounds[0];
     float height = bounds[3] - bounds[1];
 
+    collision_data_.center_offset_x = bounds[0] + width / 2;
+    collision_data_.center_offset_y = bounds[1] + height / 2;
+    collision_data_.center_x = bounds[0] + width / 2;
+    collision_data_.center_y = bounds[1] + height / 2;
     collision_data_.width = width;
     collision_data_.height = height; 
     collision_data_.radius = sqrt(width*width + height*height);
@@ -109,11 +113,15 @@ public:
     // update translation vector .. kinda
     pos_ = pos_ + speed_;
 
+    // update collision data
+    float * pos = pos_.get();
+    collision_data_.center_x = pos[0] + collision_data_.center_offset_x;
+    collision_data_.center_y = pos[1] + collision_data_.center_offset_y;
+
     // boundary checks
     boundaryChecks();
 
     // matrix
-    float * pos = pos_.get();
     render_data_.model_to_world.loadIdentity();
     render_data_.model_to_world.translate(pos[0], pos[1], 0);
   }
@@ -122,13 +130,6 @@ public:
   RenderData getRenderData() { return render_data_; }
   CollisionData getCollisionData() { return collision_data_; }
   vec4 pos() {return pos_; }
-
-  void xy(float * xy) {
-    float * pos = pos_.get();
-    xy[0] = pos[0];
-    xy[1] = pos[1];
-  }
-  
 };
 
 // derived from GameObj, used for bullets
@@ -140,6 +141,7 @@ public:
   void init(float x, float y, float vertices[], int vertex_count, float damage) {
     GameObj::init(x, y, vertices, vertex_count);
     damage_ = damage;
+    speed_ = vec4(0, 0, 0, 0);
   }
 
   void boundaryChecks() {
@@ -159,7 +161,13 @@ protected:
   Craft() {}; // don't want anyone to instantiate one of these; not sure if that will work..
 
 public:
-  void damage(float points) { health_ = health_ - points; if(health_ <= 0) deactivate(); }
+  void damage(float points) {
+    health_ = health_ - points;
+    if(health_ <= 0) {
+      deactivate();
+    }
+  }
+
   void heal(float points) { health_ = health_ + points; }
 
 };

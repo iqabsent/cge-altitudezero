@@ -20,3 +20,6 @@
 *.vcxproj.user
 ipch
 Debug
+
+# My crap
+working

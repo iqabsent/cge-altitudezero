@@ -1,28 +1,18 @@
+// GameObj, used as base for any object in game
+// This file also containes extended classes Fighter, Enemy and Projectile
+
 class GameObj {
+
   bool active_;
-
-  vec4 thrust_;
-  vec4 max_;
   float friction_;
-
-  RenderData render_data_;
-  // FOR REFERENCE
-  //struct RenderData {
-  //  GLuint vertex_count;
-  //  GLuint texture;
-  //  mat4 model_to_world;
-  //  float * vertices;
-  //};
-
-  CollisionData collision_data_;
-  // FOR REFERENCE
-  //struct CollisionData {
-  //  float center_offset_x, center_offset_y, center_x, center_y, width, height, radius;
-  //};
+  vec4 thrust_;
+  RenderData render_data_;        // struct defined in structs.h
+  CollisionData collision_data_;  // struct defined in structs.h
 
 protected:
   vec4 pos_;
   vec4 speed_;
+  vec4 max_velocity_;
 
 public:
   GameObj(){
@@ -35,7 +25,7 @@ public:
     friction_ = 0;
 
     pos_ = vec4(x,y,0,0);
-    max_ = vec4(1,1,0,0);
+    max_velocity_ = vec4(1,1,0,0);
     render_data_.vertices = vertices;
     render_data_.vertex_count = vertex_count;
     render_data_.model_to_world.loadIdentity();
@@ -56,6 +46,7 @@ public:
     float width = bounds[2] - bounds[0];
     float height = bounds[3] - bounds[1];
 
+    // find center of geometry and record radius
     collision_data_.center_offset_x = bounds[0] + width / 2;
     collision_data_.center_offset_y = bounds[1] + height / 2;
     collision_data_.center_x = bounds[0] + width / 2;
@@ -86,8 +77,8 @@ public:
     friction_ = friction;
   }
 
-  void setMaxSpeed(float max) {
-    max_ = vec4(max, max, 0, 0);
+  void setMaxVelocity(float max) {
+    max_velocity_ = vec4(max, max, 0, 0);
   }
 
   virtual void boundaryChecks() {};
@@ -100,11 +91,11 @@ public:
     // friction
     float * speed = speed_.get();
     for (int i = 0; i < 2; i++) {
-      if(speed[i] / friction_ < 1 && speed[i] / friction_ > -1) speed[i] = 0; //would be better to get abs and compare magnitude against friciton
+      if(speed[i] / friction_ <= 1 && speed[i] / friction_ >= -1) speed[i] = 0; //would be better to get abs and compare magnitude against friciton
       if(speed[i] > 0 && speed[i] > friction_) speed[i] -= friction_;
       if(speed[i] < 0 && speed[i] < -friction_) speed[i] += friction_;
       // limit max speed
-      float * max = max_.get();
+      float * max = max_velocity_.get();
       if(speed[i] > 0 && speed[i] > max[i]) speed[i] = max[i];
       if(speed[i] < 0 && speed[i] < -max[i]) speed[i] = -max[i];
     }
@@ -158,7 +149,7 @@ class Craft : public GameObj {
 
 protected:
   float health_;
-  Craft() {}; // don't want anyone to instantiate one of these; not sure if that will work..
+  Craft() {}; // don't want anyone to instantiate one of these
 
 public:
   void damage(float points) {
@@ -169,6 +160,7 @@ public:
   }
 
   void heal(float points) { health_ = health_ + points; }
+  float getHealth() { return health_; }
 
 };
 
@@ -176,6 +168,24 @@ public:
 class Fighter : public Craft {
 
 public:
+  void init(float x, float y, float vertices[], int vertex_count) {
+    Craft::init(x, y, vertices, vertex_count);
+    health_ = 100;
+  }
+
+  void simulate() {
+    Craft::simulate();
+    float * speed = speed_.get();
+    float * max = max_velocity_.get();
+    if(speed[0] < -max[0]/2) {
+      setTexture(Asset::get().texture(Asset::TX_FIGHTER_LEFT));
+    } else if(speed[0] > max[0]/2) {
+      setTexture(Asset::get().texture(Asset::TX_FIGHTER_RIGHT));
+    } else {
+      setTexture(Asset::get().texture(Asset::TX_FIGHTER));
+    }
+  }
+
   void boundaryChecks() {
     float * pos = pos_.get();
     if(pos[0] > 10) pos[0] = 10;
@@ -183,6 +193,10 @@ public:
     if(pos[1] > 10) pos[1] = 10;
     if(pos[1] < -10) pos[1] = -10;
     pos_ = vec4(pos[0], pos[1], 0, 0);
+  }
+
+  void die() {
+    // cry?
   }
 };
 

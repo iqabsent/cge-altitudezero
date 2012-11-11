@@ -82,6 +82,7 @@
     <Library Include="lib\OpenAL32.lib" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="include\assets.h" />
     <ClInclude Include="include\collision.h" />
     <ClInclude Include="include\file_manager.h" />
     <ClInclude Include="include\gameobj.h" />
@@ -89,6 +90,7 @@
     <ClInclude Include="include\render.h" />
     <ClInclude Include="include\sound_manager.h" />
     <ClInclude Include="include\spawner.h" />
+    <ClInclude Include="include\structs.h" />
     <ClInclude Include="include\texture_manager.h" />
     <ClInclude Include="include\vector.h" />
   </ItemGroup>

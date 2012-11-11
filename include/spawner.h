@@ -3,20 +3,12 @@
 // ..and it's a Singleton .. just because it is
 
 //global variable(s) ... it made sense at the time
-float craft_vertices[] = {
-  -0.3f, -0.3f, 0,
-  0.3f, -0.3f, 0,
-  0,  0.3f, 0
-};
-
-float bullet_vertices[3*6] = {
-  -0.02f, 0.02f, 0,
-  -0.02f, -0.02f, 0,
-  0.02f, -0.02f, 0,
-  0.02f, 0.02f, 0,
-  0.02f, -0.02f, 0,
-  -0.02f, 0.02f, 0
-};
+float craft_vertices[3*6] = { -0.5f, 0.5f, 0, -0.5f, -0.5f, 0, 0.5f, 0.5f, 0, 0.5f, -0.5f, 0, -0.5f, -0.5f, 0, 0.5f, 0.5f, 0 };
+float craft_uv[3*6] = { 0.0f, 1.0f, 0, 0.0f, 0.0f, 0, 1.0f, 1.0f, 0, 1.0f, 0.0f, 0, 0.0f, 0.0f, 0, 1.0f, 1.0f, 0 };
+float enemy_craft_vertices[3*6] = { -0.6f, 0.6f, 0, -0.6f, -0.6f, 0,  0.6f, 0.5f, 0, 0.6f, -0.6f, 0, -0.6f, -0.6f, 0, 0.6f, 0.6f, 0 };
+float enemy_craft_uv[3*6] = { 0.0f, 1.2f, 0, 0.0f, 0.0f, 0, 1.2f, 1.2f, 0, 1.2f, 0.0f, 0, 0.0f, 0.0f, 0, 1.2f, 1.2f, 0 };
+float bullet_vertices[3*6] = { -0.06f, 0.08f, 0, -0.06f, -0.08f, 0, 0.06f, -0.08f, 0, 0.06f, 0.08f, 0, 0.06f, -0.08f, 0, -0.06f, 0.08f, 0 };
+float bullet_uv[3*6] = { 0.0f, 0.15f, 0, 0.0f, 0.15f, 0, 0.15f, 0.0f, 0, 0.15f, 0.15f, 0, 0.15f, 0.0f, 0, 0.0f, 0.15f, 0 };
 
 class Spawn {
 
@@ -31,35 +23,23 @@ class Spawn {
   Projectile enemy_bullets_[max_enemy_bullets_];
   Projectile friendly_bullets_[max_friendly_bullets_];
   Enemy enemies_[max_enemies_];
-  GLuint textures_[3];
 
   // these prevent instancing .. somehow
   Spawn(){}; // this one because it's the constructor .. and it's private
   Spawn(Spawn const&); // these two because they're private .. and .. ?
-  void operator=(Spawn const&);
+  void operator=(Spawn const&); // private overridden assignment operator
 
 public:
 
-  static enum textures { TX_FIGHTER, TX_ENEMY, TX_BULLET }; // no more than textures_ array size
-  static enum sounds { SND_NOTING, SND_SHOT, SND_RICO, SND_RICO2, SND_RICO3, SND_EXPLODE };
-
   void init() {
     friendly_bullet_cooldown_ = 0;
-
-    // set up textures
-    textures_[TX_FIGHTER] = texture_manager::new_texture("assets/texture.tga", 0, 1, 256, 180);
-    textures_[TX_ENEMY] = texture_manager::new_texture("assets/texture.tga", 100, 100, 56, 80);
-    textures_[TX_BULLET] = texture_manager::new_texture("assets/texture.tga", 2, 0, 1, 1);
-   
-    // set up sounds
-    sound_manager::add_buffers("assets/q3sounds.txt", "assets/q3sounds.wav");
   }
 
   void spawnPlayer1() {
-    player1_.init(0,-5,craft_vertices,3);
-    player1_.setTexture(textures_[TX_FIGHTER]);
-    player1_.setFriction(0.03f);
-    player1_.setMaxSpeed(0.24f);
+    player1_.init(0, -5, craft_vertices, 6);
+    player1_.setTexture(Asset::get().texture(Asset::TX_FIGHTER));
+    player1_.setFriction(0.01f);
+    player1_.setMaxVelocity(0.20f);
   }
 
   void spawnFriendlyBullet(Fighter player) {
@@ -78,11 +58,11 @@ public:
         player.getCollisionData().center_y,
         bullet_vertices, 6, 25
       );
-      friendly_bullets_[i].setTexture(textures_[TX_BULLET]);
-      friendly_bullets_[i].setMaxSpeed(0.2f);
+      friendly_bullets_[i].setTexture(Asset::get().texture(Asset::TX_BULLET));
+      friendly_bullets_[i].setMaxVelocity(0.2f);
       friendly_bullets_[i].setThrust(0.0f, 0.2f);
       // make sound :)
-      spawnSound(SND_SHOT);
+      spawnSound(Asset::SND_SHOT);
       // set cooldown
       friendly_bullet_cooldown_ = 10;
     }
@@ -92,12 +72,12 @@ public:
     int i;
     for (i = 0; i < max_enemies_; i++) {
       if(!enemies_[i].isActive()) break;
-    } // will return last enemy if none are inactive
+    }
 
     if(!enemies_[i].isActive()) {
       enemies_[i].init(x, y, craft_vertices, 6);
-      enemies_[i].setTexture(textures_[TX_ENEMY]);
-      enemies_[i].setMaxSpeed(0.02f);
+      enemies_[i].setTexture(Asset::get().texture(Asset::TX_ENEMY));
+      enemies_[i].setMaxVelocity(0.02f);
       enemies_[i].setThrust(0.0f, -0.02f);
     }
   }
@@ -121,10 +101,19 @@ public:
   int getEnemyBulletMax(){ return max_enemy_bullets_; }
   int getEnemyMax(){ return max_enemies_; }
 
-  //GameObj * getGameObjects() {}
+  // somehow return all GameObjs as single array
+  // would be useful for rendering and simulating all Objs in one go
+  //GameObj * getGameObjects() {} // ... ?
 
   void cooldown() {
     if(friendly_bullet_cooldown_) friendly_bullet_cooldown_--;
+  }
+
+  static float * getBulletUV() {
+    return bullet_uv;
+  }
+  static float * getCraftUV() {
+    return craft_uv;
   }
 
   static Spawn& get()

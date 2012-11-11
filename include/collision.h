@@ -27,11 +27,12 @@ public:
     delta_x = hitting.center_x - being_hit.center_x;
     delta_y = hitting.center_y - being_hit.center_y;
 
-    distance = sqrt(delta_x*delta_x + delta_y*delta_y);
+    distance = sqrt(delta_x*delta_x + delta_y*delta_y); 
 
-    hit_possible = distance < hitting.radius + being_hit.radius;
+    hit_possible = distance < (hitting.radius + being_hit.radius) * 1/3;
     // hit possible, check bounding box
     // for now assume hit .. no time :/
+    // reduce by 66% for average white-space inaccuracy on radius
 
     return hit_possible;
   }

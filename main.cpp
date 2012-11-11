@@ -2,93 +2,92 @@
 #include "include/GL/glew.h"
 #define FREEGLUT_STATIC
 #include "include/GL/glut.h"
-
 #include "include/AL/al.h"
 #include "include/AL/alc.h"
-
-// just use andy thomason's vector and matrix classes
-// think they need math
 #include <stdio.h>
 #include <math.h>
 #include <assert.h>
-
 #include "include/vector.h"
 #include "include/matrix.h"
-
 #include "include/file_manager.h"
 #include "include/texture_manager.h"
 #include "include/sound_manager.h"
-
-struct RenderData {
-  GLuint vertex_count;
-  GLuint texture;
-  mat4 model_to_world;
-  float * vertices;
-};
-
-struct CollisionData {
-  float center_offset_x, center_offset_y, center_x, center_y, width, height, radius;
-};
-
+#include "include/structs.h"
+#include "include/assets.h"
 #include "include/render.h"
 #include "include/gameobj.h"
 #include "include/collision.h"
 #include "include/spawner.h"
 
-Renderer renderer;
-
-GLuint fighter_texture;
-GLuint enemy_texture;
-GLuint bullet_texture;
-
 const int viewport_width_ = 800, viewport_height_ = 800;
+int friendly_bullets_max_ = Spawn::get().getFriendlyBulletMax();
+int enemy_bullets_max_ = Spawn::get().getEnemyBulletMax();
+int enemy_max_ = Spawn::get().getEnemyMax();
+
 char keys[256];
 
-Projectile bullet;
+Renderer renderer; // could also be a singleton ...
+
 Fighter player1;
-Enemy enemy;
+Projectile * friendly_bullets_;
+Projectile * enemy_bullets_;
+Enemy * enemies_;
 
 void collision_detection() {
   
   // for each friendly bullet, check hit on each enemy
   // for player fighter craft, check hit on each enemy and each enemy bullet
 
-  Projectile * friendly_bullets = Spawn::get().getFriendlyBullets();
-  Enemy * enemies = Spawn::get().getEnemies();
-
-  int enemy_max = Spawn::get().getEnemyMax();
-  int friendly_bullets_max = Spawn::get().getFriendlyBulletMax();
-
-  for(int i = 0; i < friendly_bullets_max; i++) {
-    if(friendly_bullets[i].isActive()) {
-      for(int j = 0; j < enemy_max; j++) {
-        if(enemies[j].isActive()) {
-          if(Collision::checkHit(friendly_bullets[i].getCollisionData(), enemies[j].getCollisionData())) {
+  for(int i = 0; i < friendly_bullets_max_; i++) {
+    if(friendly_bullets_[i].isActive()) {
+      for(int j = 0; j < enemy_max_; j++) {
+        if(enemies_[j].isActive()) {
+          if(Collision::checkHit(friendly_bullets_[i].getCollisionData(), enemies_[j].getCollisionData())) {
             // hit!
-            enemies[j].damage(friendly_bullets[i].getDamage());
-            Spawn::get().spawnSound(Spawn::sounds::SND_RICO);
-            friendly_bullets[i].deactivate();
-            if(!enemies[j].isActive()) {
+            Spawn::get().spawnSound(rand() % 3 + 2);
+            enemies_[j].damage(friendly_bullets_[i].getDamage());
+            friendly_bullets_[i].deactivate();
+            if(!enemies_[j].isActive()) {
               // damage killed it
               // spawn explosion effect!! .. in the near future :/
-              Spawn::get().spawnSound(Spawn::sounds::SND_EXPLODE);
+              Spawn::get().spawnSound(Asset::SND_EXPLODE);
             }
           }
         }
       }
     }
   }
+
+  for(int i = 0; i < enemy_max_; i++) {
+    if(enemies_[i].isActive()) {
+      if(Collision::checkHit(enemies_[i].getCollisionData(), player1.getCollisionData())) {
+        // hit!
+        Spawn::get().spawnSound(Asset::SND_EXPLODE);
+        enemies_[i].deactivate();
+        player1.damage(enemies_[i].getHealth());
+        if(!player1.isActive()) {
+          //player died
+          player1.die();
+          Spawn::get().spawnPlayer1();
+          player1 = Spawn::get().getPlayer1();
+        }
+      }
+    }
+  }
+
 }
 
 void simulate() {
 
   Spawn::get().cooldown();
 
+  //spawn enemies
+
   float speed = 10.0f / 30;
-  if (keys['f']) player1.setThrust(0.06f,0.0f);
-  if (keys['s']) player1.setThrust(-0.06f,0.0f);
-  if (keys['d']) player1.setThrust(0.0f,-0.06f);
-  if (keys['e']) player1.setThrust(0.0f,0.06f);
+  if (keys['f']) player1.setThrust(0.02f,0.0f);
+  if (keys['s']) player1.setThrust(-0.02f,0.0f);
+  if (keys['d']) player1.setThrust(0.0f,-0.02f);
+  if (keys['e']) player1.setThrust(0.0f,0.02f);
   if (keys['c']) {
     Spawn::get().spawnFriendlyBullet(player1);
   };
@@ -96,24 +95,16 @@ void simulate() {
   player1.simulate();
 
   // simulate all friendly bullets
-  Projectile * friendly_bullets = Spawn::get().getFriendlyBullets();
-  int friendly_bullets_max = Spawn::get().getFriendlyBulletMax();
-  for(int i = 0; i < friendly_bullets_max; i++) {
-    if(friendly_bullets[i].isActive()) friendly_bullets[i].simulate();
+  for(int i = 0; i < friendly_bullets_max_; i++) {
+    if(friendly_bullets_[i].isActive()) friendly_bullets_[i].simulate();
   }
-
   // simulate all enemy bullets
-  Projectile * enemy_bullets = Spawn::get().getEnemyBullets();
-  int enemy_bullets_max = Spawn::get().getEnemyBulletMax();
-  for(int i = 0; i < enemy_bullets_max; i++) {
-    if(enemy_bullets[i].isActive()) enemy_bullets[i].simulate();
+  for(int i = 0; i < enemy_bullets_max_; i++) {
+    if(enemy_bullets_[i].isActive()) enemy_bullets_[i].simulate();
   }
-
   // simulate all enemies
-  Enemy * enemies = Spawn::get().getEnemies();
-  int enemies_max = Spawn::get().getEnemyMax();
-  for(int i = 0; i < enemies_max; i++) {
-    if(enemies[i].isActive()) enemies[i].simulate();
+  for(int i = 0; i < enemy_max_; i++) {
+    if(enemies_[i].isActive()) enemies_[i].simulate();
   }
 
   collision_detection();
@@ -127,32 +118,19 @@ void render()
 {
   renderer.preRender();
 
-  // crappy implimentation .. to render all friendly bullets
-  Projectile * friendly_bullets = Spawn::get().getFriendlyBullets();
-  int friendly_bullets_max = Spawn::get().getFriendlyBulletMax();
-  for(int i = 0; i < friendly_bullets_max; i++) {
-    if(friendly_bullets[i].isActive()) renderer.renderObject(friendly_bullets[i].getRenderData());
+  // crappy implimentation .. to render all GameObjs
+  for(int i = 0; i < friendly_bullets_max_; i++) {
+    if(friendly_bullets_[i].isActive()) renderer.renderObject(friendly_bullets_[i].getRenderData(), Spawn::getBulletUV());
   }
-
-  // .. and render all enemy bullets
-  Projectile * enemy_bullets = Spawn::get().getEnemyBullets();
-  int enemy_bullets_max = Spawn::get().getEnemyBulletMax();
-  for(int i = 0; i < enemy_bullets_max; i++) {
-    if(enemy_bullets[i].isActive()) renderer.renderObject(enemy_bullets[i].getRenderData());
+  for(int i = 0; i < enemy_bullets_max_; i++) {
+    if(enemy_bullets_[i].isActive()) renderer.renderObject(enemy_bullets_[i].getRenderData(), Spawn::getBulletUV());
   }
-
-  // .. and all enemies
-  Enemy * enemies = Spawn::get().getEnemies();
-  int enemy_max = Spawn::get().getEnemyMax();
-  for(int i = 0; i < enemy_max; i++) {
-    if(enemies[i].isActive()) renderer.renderObject(enemies[i].getRenderData());
+  for(int i = 0; i < enemy_max_; i++) {
+    if(enemies_[i].isActive()) renderer.renderObject(enemies_[i].getRenderData(), Spawn::getCraftUV());
   }
 
   //render player
-  renderer.renderObject(player1.getRenderData());
-
-  if(enemy.isActive()) renderer.renderObject(enemy.getRenderData());
-  if(bullet.isActive()) renderer.renderObject(bullet.getRenderData());
+  renderer.renderObject(player1.getRenderData(), Spawn::getCraftUV());
 }
 
 static void display() { simulate(); render(); }
@@ -168,10 +146,15 @@ void main(int argc, char** argv) {
   glewInit();
 
   renderer.init();
+
   Spawn::get().init();
   
   Spawn::get().spawnPlayer1();
   player1 = Spawn::get().getPlayer1();
+
+  enemies_ = Spawn::get().getEnemies();
+  enemy_bullets_ = Spawn::get().getEnemyBullets();
+  friendly_bullets_ = Spawn::get().getFriendlyBullets();
   
   Spawn::get().spawnEnemy(0,10);
   Spawn::get().spawnEnemy(5,10);

@@ -87,7 +87,7 @@ public:
     return modelToWorld * worldToCamera * cameraToProjection;
   }
 
-  void renderObject(GLuint texture, float vertices[], int vertex_count, mat4 modelToWorld) {
+  void renderObject(GLuint texture, float vertices[], float uv[], int vertex_count, mat4 modelToWorld) {
 
     mat4 modelToProjection = setProjection(modelToWorld);
 
@@ -97,7 +97,7 @@ public:
     glUniformMatrix4fv(modelToProjection_index, 1, GL_FALSE, modelToProjection.get());
   
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3*sizeof(float), (void*)vertices );
-    glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 3*sizeof(float), (void*)vertices );
+    glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 3*sizeof(float), (void*)uv );
     glEnableVertexAttribArray(0);
     glEnableVertexAttribArray(2); 
 
@@ -105,7 +105,11 @@ public:
   }
 
   void renderObject(RenderData render_data) {
-    renderObject(render_data.texture, render_data.vertices, render_data.vertex_count, render_data.model_to_world);
+    renderObject(render_data.texture, render_data.vertices, render_data.vertices, render_data.vertex_count, render_data.model_to_world);
+  }
+
+  void renderObject(RenderData render_data, float uv_map[]) {
+    renderObject(render_data.texture, render_data.vertices, uv_map, render_data.vertex_count, render_data.model_to_world);
   }
 
 };

@@ -72,10 +72,11 @@ public:
     } // will return last bullet if none are inactive
 
     if(!friendly_bullets_[i].isActive()) {
+      // initialise new bullet
       friendly_bullets_[i].init(
         player.getCollisionData().center_x,
         player.getCollisionData().center_y,
-        bullet_vertices, 6, 10
+        bullet_vertices, 6, 25
       );
       friendly_bullets_[i].setTexture(textures_[TX_BULLET]);
       friendly_bullets_[i].setMaxSpeed(0.2f);

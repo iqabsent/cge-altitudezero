@@ -52,13 +52,30 @@ void collision_detection() {
   
   // for each friendly bullet, check hit on each enemy
   // for player fighter craft, check hit on each enemy and each enemy bullet
-  if(Collision::checkHit(bullet.getCollisionData(), enemy.getCollisionData())) {
-    enemy.damage(bullet.getDamage());
-    Spawn::get().spawnSound(Spawn::sounds::SND_RICO);
-    if(!enemy.isActive()) {
-      // damage killed it
-      // spawn explosion effect!! .. in the near future :/
-      Spawn::get().spawnSound(Spawn::sounds::SND_EXPLODE);
+
+  Projectile * friendly_bullets = Spawn::get().getFriendlyBullets();
+  Enemy * enemies = Spawn::get().getEnemies();
+
+  int enemy_max = Spawn::get().getEnemyMax();
+  int friendly_bullets_max = Spawn::get().getFriendlyBulletMax();
+
+  for(int i = 0; i < friendly_bullets_max; i++) {
+    if(friendly_bullets[i].isActive()) {
+      for(int j = 0; j < enemy_max; j++) {
+        if(enemies[j].isActive()) {
+          if(Collision::checkHit(friendly_bullets[i].getCollisionData(), enemies[j].getCollisionData())) {
+            // hit!
+            enemies[j].damage(friendly_bullets[i].getDamage());
+            Spawn::get().spawnSound(Spawn::sounds::SND_RICO);
+            friendly_bullets[i].deactivate();
+            if(!enemies[j].isActive()) {
+              // damage killed it
+              // spawn explosion effect!! .. in the near future :/
+              Spawn::get().spawnSound(Spawn::sounds::SND_EXPLODE);
+            }
+          }
+        }
+      }
     }
   }
 }

@@ -17,6 +17,7 @@ class Spawn {
   static const int max_enemies_ = 20;
 
   int friendly_bullet_cooldown_;
+  int enemy_cooldown_;
 
   Fighter player1_;
   Fighter player2_;
@@ -33,6 +34,7 @@ public:
 
   void init() {
     friendly_bullet_cooldown_ = 0;
+    enemy_cooldown_ = 500;
   }
 
   void spawnPlayer1() {
@@ -82,6 +84,22 @@ public:
     }
   }
 
+  // hacked to spawn different variables based on type. can handle this better..
+  void spawnEnemy(float x, float y, int type) {
+    int i;
+    for (i = 0; i < max_enemies_; i++) {
+      if(!enemies_[i].isActive()) break;
+    }
+
+    if(!enemies_[i].isActive()) {
+      enemies_[i].init(x, y, craft_vertices, 6);
+      enemies_[i].setTexture(Asset::get().texture(Asset::TX_ENEMY + type - 1));
+      enemies_[i].setMaxVelocity(0.02f * type);
+      enemies_[i].setThrust(0.0f, -0.02f * type);
+      enemies_[i].setHealth(100 / (type + 1));
+    }
+  }
+
   void spawnSound(int sound) {
     char name[2];
     name[0] = sound + '0';
@@ -107,6 +125,15 @@ public:
 
   void cooldown() {
     if(friendly_bullet_cooldown_) friendly_bullet_cooldown_--;
+    if(enemy_cooldown_) enemy_cooldown_--;
+  }
+
+  void setEnemyCooldown(int cooldown) {
+    enemy_cooldown_ = cooldown;
+  }
+
+  int getEnemyCooldown() {
+    return enemy_cooldown_;
   }
 
   static float * getBulletUV() {

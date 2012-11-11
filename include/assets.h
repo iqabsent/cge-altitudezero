@@ -10,7 +10,7 @@ class Asset {
   void operator=(Asset const&);
 
 public:
-  static enum textures { TX_FIGHTER, TX_FIGHTER_LEFT, TX_FIGHTER_RIGHT, TX_ENEMY, TX_BULLET }; // no more than textures_[] size
+  static enum textures { TX_FIGHTER, TX_FIGHTER_LEFT, TX_FIGHTER_RIGHT, TX_BULLET, TX_ENEMY, TX_ENEMY_B, TX_ENEMY_C }; // no more than textures_[] size
   static enum sounds { SND_NOTING, SND_SHOT, SND_RICO, SND_RICO2, SND_RICO3, SND_EXPLODE };
 
   void init() {
@@ -18,8 +18,10 @@ public:
     textures_[TX_FIGHTER] = texture_manager::new_texture("assets/spaceship_sprites_by_arboris.tga", 41, 132, 40, 40);
     textures_[TX_FIGHTER_LEFT] = texture_manager::new_texture("assets/spaceship_sprites_by_arboris.tga", 1, 132, 40, 40);
     textures_[TX_FIGHTER_RIGHT] = texture_manager::new_texture("assets/spaceship_sprites_by_arboris.tga", 81, 132, 40, 40);
-    textures_[TX_ENEMY] = texture_manager::new_texture("assets/enemy_sprite_by_skorpio.tga", 1, 1, 36, 36);
     textures_[TX_BULLET] = texture_manager::new_texture("assets/spaceship_sprites_by_arboris.tga", 4, 9, 6, 8);
+    textures_[TX_ENEMY] = texture_manager::new_texture("assets/enemy_sprite_by_skorpio.tga", 1, 1, 36, 36);
+    textures_[TX_ENEMY_B] = texture_manager::new_texture("assets/enemy_sprite_by_skorpio.tga", 1, 1, 36, 36); // same
+    textures_[TX_ENEMY_C] = texture_manager::new_texture("assets/enemy_sprite_by_skorpio.tga", 1, 1, 36, 36); // same again
    
     // set up sounds
     sound_manager::add_buffers("assets/q3sounds.txt", "assets/q3sounds.wav");

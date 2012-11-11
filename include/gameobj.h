@@ -1,5 +1,5 @@
 // GameObj, used as base for any object in game
-// This file also containes extended classes Fighter, Enemy and Projectile
+// This file also contains extended classes Craft(abstract), Fighter, Enemy and Projectile
 
 class GameObj {
 
@@ -123,6 +123,7 @@ public:
   vec4 pos() {return pos_; }
 };
 
+/////////////////////////////////////////
 // derived from GameObj, used for bullets
 class Projectile : public GameObj {
 
@@ -144,6 +145,7 @@ public:
   float getDamage(){ return damage_; }
 };
 
+////////////////////////////////////////////////////////////////
 // derived from GameObj used, for player fighter and enemy craft
 class Craft : public GameObj {
 
@@ -160,10 +162,12 @@ public:
   }
 
   void heal(float points) { health_ = health_ + points; }
+  void setHealth(int points) {health_ = points; }
   float getHealth() { return health_; }
 
 };
 
+////////////////////////////////////////////////////
 // derived from Craft, used for player fighter craft
 class Fighter : public Craft {
 
@@ -200,6 +204,7 @@ public:
   }
 };
 
+///////////////////////////////////////////////////
 // derived from Craft, used for enemy fighter craft
 class Enemy : public Craft {
 
@@ -213,5 +218,18 @@ public:
   void boundaryChecks() {
     float * pos = pos_.get();
     if(abs(pos[0]) > 10 || abs(pos[1]) > 10) deactivate();
+  }
+
+  void behaviour() {
+    // AI ! .. the part I'm really interested in
+    // completely randomly fire?
+    int hold_fire = rand() % 20;
+    //if(!hold_fire) ... $#%&^! ... can't spawn things from here :/
+    //pass function pointer to function in main.cpp as spawn proxy?
+  }
+
+  void simulate() {
+    behaviour();
+    Craft::simulate();
   }
 };

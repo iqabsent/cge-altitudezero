@@ -8,6 +8,7 @@ Fly .. shoot things .. don't get shot or crash.
 By: Willem B. van der Merwe
 33245888
 
+!!Requires OpenAL!!
 
 Creds:
 arboris.deviantart.com for the Fighter space-ship sprites

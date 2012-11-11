@@ -23,6 +23,7 @@ const int viewport_width_ = 800, viewport_height_ = 800;
 int friendly_bullets_max_ = Spawn::get().getFriendlyBulletMax();
 int enemy_bullets_max_ = Spawn::get().getEnemyBulletMax();
 int enemy_max_ = Spawn::get().getEnemyMax();
+int kills_ = 0;
 
 char keys[256];
 
@@ -51,6 +52,7 @@ void collision_detection() {
               // damage killed it
               // spawn explosion effect!! .. in the near future :/
               Spawn::get().spawnSound(Asset::SND_EXPLODE);
+              kills_++;
             }
           }
         }
@@ -81,7 +83,15 @@ void simulate() {
 
   Spawn::get().cooldown();
 
-  //spawn enemies
+  // spawn enemies ... much room for improvement
+  // ..can spawn enemies with different speed, health, etc.
+  if(!Spawn::get().getEnemyCooldown()) {
+    float x = rand() % 18 - 9;
+    float y = 10;
+    int type = rand() % 3 + 1;
+    Spawn::get().spawnEnemy(x, y, type);
+    Spawn::get().setEnemyCooldown((int)(500 / (kills_ + 1)));
+  }
 
   float speed = 10.0f / 30;
   if (keys['f']) player1.setThrust(0.02f,0.0f);

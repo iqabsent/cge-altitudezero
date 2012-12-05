@@ -16,6 +16,7 @@
 *.sdf
 *.opensdf
 *.suo
+*.vcxproj
 *.vcxproj.filters
 *.vcxproj.user
 ipch

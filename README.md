@@ -1,4 +1,4 @@
-# MScCGE-gp-2011 #
+# MSc CGE (Game Programming - 2D game) Altitude Zero #
 ==============
 
 Title: AltitudeZero
